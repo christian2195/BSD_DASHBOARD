@@ -1,0 +1,201 @@
+﻿{% extends 'dashboard_app/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-tachometer-alt"></i> Dashboard BSD</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <span class="badge bg-secondary">
+            Última actualización: {{ registros.last.fecha_actualizacion|date:"d/m/Y H:i"|default:"Sin datos" }}
+        </span>
+    </div>
+</div>
+
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Monto Total</h5>
+                <h2 class="text-primary">${{ total_monto|floatformat:2|default:"0.00" }}</h2>
+                <p class="card-text">Inversión total en proyectos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Proyectos</h5>
+                <h2 class="text-success">{{ total_proyectos }}</h2>
+                <p class="card-text">Total de proyectos registrados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Artículos Dotados</h5>
+                <h2 class="text-warning">{{ total_articulos }}</h2>
+                <p class="card-text">Total de artículos entregados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Registros</h5>
+                <h2 class="text-info">{{ registros.count }}</h2>
+                <p class="card-text">Total de registros en sistema</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Distribución por Estado</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="estadoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Distribución por Vértice</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="verticeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Top 10 Instituciones por Monto</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Institución</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for institucion in top_instituciones %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ institucion.institucion|truncatechars:30 }}</td>
+                                <td>${{ institucion.monto_total|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge bg-{% if institucion.ejecutada == 'EJECUTADA' %}success{% elif institucion.ejecutada == 'EN EJECUCION' %}warning{% else %}danger{% endif %}">
+                                        {{ institucion.ejecutada }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay datos disponibles</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Resumen por Estado</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Cantidad</th>
+                                <th>Monto Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for estado in estados %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-{% if estado.ejecutada == 'EJECUTADA' %}success{% elif estado.ejecutada == 'EN EJECUCION' %}warning{% else %}danger{% endif %}">
+                                        {{ estado.ejecutada }}
+                                    </span>
+                                </td>
+                                <td>{{ estado.count }}</td>
+                                <td>${{ estado.monto_total|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Datos para gráficos
+    const estadoData = {
+        labels: [{% for e in estados %}'{{ e.ejecutada }}',{% endfor %}],
+        datasets: [{
+            data: [{% for e in estados %}{{ e.count }},{% endfor %}],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    };
+
+    const verticeData = {
+        labels: [{% for v in vertices %}'{{ v.vertice }}',{% endfor %}],
+        datasets: [{
+            data: [{% for v in vertices %}{{ v.monto_total|default:0 }},{% endfor %}],
+            backgroundColor: ['#1a237e', '#283593', '#3949ab']
+        }]
+    };
+
+    // Inicializar gráficos
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('estadoChart')) {
+            new Chart(document.getElementById('estadoChart'), {
+                type: 'pie',
+                data: estadoData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        if (document.getElementById('verticeChart')) {
+            new Chart(document.getElementById('verticeChart'), {
+                type: 'doughnut',
+                data: verticeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

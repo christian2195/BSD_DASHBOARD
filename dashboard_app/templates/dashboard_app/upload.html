@@ -1,0 +1,98 @@
+﻿{% extends 'dashboard_app/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="fas fa-upload"></i> Cargar Datos BSD</h1>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5>Subir archivo Excel</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">
+                            <i class="fas fa-file-excel"></i> Archivo Excel (.xlsx, .xls)
+                        </label>
+                        <input type="file" class="form-control" name="excel_file" 
+                               accept=".xlsx,.xls" required id="excelFile">
+                        <div class="form-text">
+                            Seleccione un archivo Excel con el formato BSD
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               name="replace_data" id="replaceData">
+                        <label class="form-check-label" for="replaceData">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                            Reemplazar todos los datos existentes
+                        </label>
+                        <div class="form-text text-warning">
+                            ¡Atención! Esta acción eliminará todos los registros actuales.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-cloud-upload-alt"></i> Procesar Archivo
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <h6><i class="fas fa-info-circle"></i> Información del formato:</h6>
+                <ul class="small">
+                    <li>El archivo debe contener una hoja llamada "bsd"</li>
+                    <li>Las columnas deben coincidir con el formato original BSD</li>
+                    <li>Se procesarán fórmulas básicas (sumas y restas)</li>
+                    <li>Tamaño máximo: 10MB</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Estado Actual</h5>
+            </div>
+            <div class="card-body">
+                <p>Actualmente hay <strong>{{ registros.count }}</strong> registros en la base de datos.</p>
+                {% if registros.last %}
+                    <p>Última actualización: {{ registros.last.fecha_actualizacion|date:"d/m/Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('excelFile');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (fileInput.files.length > 0) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+﻿{% extends 'dashboard_app/base.html' %}
+{% block content %}
+<div class="text-center mt-5">
+    <h1 class="display-4"><i class="fas fa-chart-line"></i> BSD Dashboard</h1>
+    <p class="lead">Sistema de monitoreo de proyectos BSD</p>
+    <div class="mt-5">
+        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg m-2">
+            <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+        </a>
+        <a href="{% url 'upload' %}" class="btn btn-success btn-lg m-2">
+            <i class="fas fa-upload"></i> Cargar Datos
+        </a>
+        <a href="/admin/" class="btn btn-secondary btn-lg m-2">
+            <i class="fas fa-cog"></i> Panel de Admin
+        </a>
+    </div>
+</div>
+{% endblock %}
